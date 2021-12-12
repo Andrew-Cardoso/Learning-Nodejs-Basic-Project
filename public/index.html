@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <style>
+      body {
+        padding: 16px;
+      }
+      .container {
+        display: flex;
+        flex-flow: column-reverse;
+        gap: 16px;
+      }
+
+      main {
+        display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 12px;
+      }
+
+      main article {
+        border: thin solid black;
+        padding: 12px;
+        flex: 1 1 100%;
+		min-width: 200px;
+        max-width: 250px;
+        display: grid;
+        place-items: center;
+        gap: 4px;
+      }
+
+	  label {
+		  width: 60px;
+		  display: inline-block;
+	  }
+
+	  input:not([type="submit"]) {
+		  margin-bottom: 10px;
+	  }
+
+	  input[type="submit"] {
+		  margin-top: 8px;
+	  }
+    </style>
+  </head>
+  <body>
+    <h1>Products</h1>
+
+    <div class="container">
+      <main></main>
+      <form>
+        <fieldset>
+          <legend>Product</legend>
+
+          <div>
+            <label for="name">Name</label>
+            <input type="text" name="name" />
+          </div>
+          <div>
+            <label for="weight">Weight</label>
+            <input type="text" name="weight" />
+          </div>
+
+          <div>
+            <label for="price">Price</label>
+            <input type="number" name="price" step="0.01" min="0" />
+          </div>
+          <input type="submit" value="Add" />
+        </fieldset>
+      </form>
+    </div>
+
+    <script>
+      const path = (subPath) => `http://localhost:3030/${subPath}`;
+      const app = {
+        get: (route) => fetch(path(route)).then((res) => res?.json()),
+        post: (route, req) =>
+          fetch(path(route), { method: 'POST', body: JSON.stringify(req), headers: { 'Content-Type': 'application/json' } }).then((res) => res?.json()),
+      };
+
+      const productTemplate = ({ name, price, weight: { value, type } }) => `
+	 	<article>
+			<h1 style="margin: 0 0 5px 0">${name}</h1>
+			<section>
+				<strong>weight:</strong> ${value + type}
+			</section>
+			<section>
+				<strong>price:</strong> ${price}$
+			</section>
+		</article> 
+	  `;
+
+      const appendProducts = (products) => document.getElementsByTagName('main')[0].insertAdjacentHTML('afterbegin', products.map(productTemplate).join(''));
+
+      app.get('admin/products').then(appendProducts);
+
+      window.onload = () => {
+        const form = document.getElementsByTagName('form')[0];
+        form.addEventListener('submit', (event) => {
+          event.preventDefault();
+
+          const name = form.querySelector('[name="name"]').value;
+          const weight = form.querySelector('[name="weight"]').value;
+          const price = form.querySelector('[name="price"]').valueAsNumber;
+
+          const value = parseFloat(weight) || 0;
+          const type = weight?.split?.(value)?.[1] || '';
+
+          const product = { name, price, weight: { value, type } };
+
+          app.post('admin/products', product).then(appendProducts);
+        });
+      };
+    </script>
+  </body>
+</html>
